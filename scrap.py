@@ -11,7 +11,7 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from webdriver_manager.chrome import ChromeDriverManager
 
-import mongoExcelDTO
+from mongoExcelDTO import PersonDTO
 
 
 # Navigate to LinkedIn
@@ -54,7 +54,22 @@ def goUrlAndGetData(connectionUrlsOnPage, driver):
     for url in connectionUrlsOnPage:
         driver.get(url)     # Go to each profile
 
-        userInfoModel = mongoExcelDTO.PersonDTO()
+        userInfoModel = PersonDTO()
+
+
+        try:
+            element = driver.find_element(By.CLASS_NAME, 'pvs-entity--padded')
+
+            role = element.find_element(By.XPATH ,'.//div[contains(@class, "mr1")]//span').text
+            company = element.find_element(By.XPATH ,'.//span[contains(@class, "t-14")]').text
+
+            userInfoModel.job_title = role
+            userInfoModel.company_name = company
+        except NoSuchElementException:
+            print("Last job section does not found.")
+        except TimeoutException:
+            print("Timeout error while getting latest job data.")
+            
 
         driver.find_element(By.ID, "top-card-text-details-contact-info").click() # Click info button
         wait = WebDriverWait(driver, 2)  # 2 seconds is the maximum wait time
@@ -115,15 +130,12 @@ def goUrlAndGetData(connectionUrlsOnPage, driver):
         except TimeoutException:
             print("Birthday section element not found")
 
-        wait.until(EC.visibility_of_element_located((By.ID, "ember291"))).click()
+        #wait.until(EC.visibility_of_element_located((By.ID, "ember291"))).click()
 
         # Contact Info section end
 
-
-
-
-
-    return dataList
+        dtoList.append(userInfoModel)
+    return dtoList
 
 if(__name__ == '__main__'):
 
@@ -145,7 +157,7 @@ if(__name__ == '__main__'):
     data = goUrlAndGetData(connectionUrlsOnPage,driver)
 
     # That part should be done for every page.
-    
+    breakpoint()
     print(data)
 
 #driver.quit()
