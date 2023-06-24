@@ -12,6 +12,7 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 
 from mongoExcelDTO import PersonDTO
+from mongoService import MongoDBConnection
 
 
 # Navigate to LinkedIn
@@ -19,7 +20,6 @@ from mongoExcelDTO import PersonDTO
 def login(webDriver):
     webDriver.get('https://www.linkedin.com')
 
-    print("x")
     try:
         webDriver.find_element(By.CSS_SELECTOR, "button.authwall-join-form__form-toggle--bottom[data-tracking-control-name='auth_wall_desktop-login-toggle']").click()
         print("found")
@@ -45,10 +45,10 @@ def getProfileUrlsOfConnections(driver):
     filtered_data = [url for url in filtered_data if url.startswith('https://www.linkedin.com/in/') and url[len('https://www.linkedin.com/in/')].islower()]
     return filtered_data
 
-def goUrlAndGetData(connectionUrlsOnPage, driver):
+def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
     dtoList = []
     dataList = []
-
+    
     # Get Contact Info section start
 
     for url in connectionUrlsOnPage:
@@ -135,6 +135,9 @@ def goUrlAndGetData(connectionUrlsOnPage, driver):
         # Contact Info section end
 
         dtoList.append(userInfoModel)
+    
+    connection.insert_many_documents("datacollection", dtoList)
+
     return dtoList
 
 if(__name__ == '__main__'):
@@ -151,10 +154,13 @@ if(__name__ == '__main__'):
     # That part should be done for every page.
 
     driver.get('https://www.linkedin.com')
+
+    connection = MongoDBConnection()
+
     time.sleep(45)
 
     connectionUrlsOnPage = getProfileUrlsOfConnections(driver)
-    data = goUrlAndGetData(connectionUrlsOnPage,driver)
+    data = goUrlAndGetData(connectionUrlsOnPage, driver, connection)
 
     # That part should be done for every page.
     breakpoint()

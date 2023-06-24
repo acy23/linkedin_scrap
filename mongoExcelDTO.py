@@ -13,3 +13,6 @@ class PersonDTO:
         self.job_title = ""
 
         self.created_at = datetime.now() # audit
+    
+    def to_dict(self):
+        return self.__dict__
