@@ -56,9 +56,18 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
 
         userInfoModel = PersonDTO()
 
+        try:
+            role_description = driver.find_element(By.CLASS_NAME, "text-body-medium").text
+            userInfoModel.user_role_description = role_description
+        except NoSuchElementException:
+            print("User role description section element not found")
+        except TimeoutException:
+            print("User role description section element not found")
 
         try:
-            element = driver.find_element(By.CLASS_NAME, 'pvs-entity--padded')
+            div_element = driver.find_element(By.CSS_SELECTOR, ".pvs-list__outer-container")
+            li_element = div_element.find_element(By.CSS_SELECTOR, ".artdeco-list__item.pvs-list__item--line-separated.pvs-list__item--one-column")
+            element = li_element.find_element(By.CSS_SELECTOR, ".pvs-entity.pvs-entity--padded.pvs-list__item--no-padding-in-columns")
 
             role = element.find_element(By.XPATH ,'.//div[contains(@class, "mr1")]//span').text
             company = element.find_element(By.XPATH ,'.//span[contains(@class, "t-14")]').text
@@ -74,24 +83,32 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
         driver.find_element(By.ID, "top-card-text-details-contact-info").click() # Click info button
         wait = WebDriverWait(driver, 2)  # 2 seconds is the maximum wait time
 
+        fullname = wait.until(EC.visibility_of_element_located((By.ID, "pv-contact-info"))).text
+        userInfoModel.fullname = fullname
+
         linkedin_url = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-link"))).text
         print(linkedin_url)
         userInfoModel.linkedin_url = linkedin_url
         dataList.append(linkedin_url)
 
-        email = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-type.ci-email")))
-        email_text = email.find_element(By.TAG_NAME, "a").text
-        userInfoModel.email = email_text
-        dataList.append(email_text)
+        try:
+            email = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-type.ci-email")))
+            email_text = email.find_element(By.TAG_NAME, "a").text
+            userInfoModel.email = email_text
+            dataList.append(email_text)
+        except NoSuchElementException:
+            print("Email section element not found")
+        except TimeoutException:
+            print("Email section element not found")
 
         try:
-            connection_start_time = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-type")))
-            span_element = connection_start_time.find_element(By.TAG_NAME, "span")
-            if span_element:
-                connection_start_time_text = span_element.text
-                userInfoModel.connection_start_time = connection_start_time_text
-                dataList.append(connection_start_time_text)
+            connection_section = wait.until(EC.visibility_of_element_located((By.XPATH, "//section[contains(@class, 'pv-contact-info__contact-type') and not(contains(@class, ' '))]")))
+            if connection_section:
+                connection_date = connection_section.find_element(By.CSS_SELECTOR, ".pv-contact-info__ci-container.t-14").text
+                userInfoModel.connection_start_time = connection_date
         except NoSuchElementException:
+            print("No such span tag")
+        except TimeoutException:
             print("No such span tag")
 
         try:
@@ -102,6 +119,8 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
                 dataList.append(website_text)
         except TimeoutException:
             print("Website section element not found")
+        except NoSuchElementException:
+            print("Website section element not found")
 
         try:
             phone = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-type.ci-phone")))
@@ -110,6 +129,8 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
                 userInfoModel.phone = phone_text
                 dataList.append(phone_text)
         except TimeoutException:
+            print("Phone section element not found")
+        except NoSuchElementException:
             print("Phone section element not found")
 
         try:
@@ -122,15 +143,13 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
             print("Address section element not found")
 
         try:
-            birthday = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-type ci-birthday")))
-            if birthday:
-                birthday_text = birthday.find_element(By.TAG_NAME, "span").text
+            birthday_section = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "pv-contact-info__contact-type.ci-birthday")))
+            if birthday_section:
+                birthday_text = birthday_section.find_element(By.CSS_SELECTOR, ".pv-contact-info__ci-container .pv-contact-info__contact-item").text
                 userInfoModel.birthday = birthday_text
                 #dataList.append(birthday_text)
         except TimeoutException:
             print("Birthday section element not found")
-
-        #wait.until(EC.visibility_of_element_located((By.ID, "ember291"))).click()
 
         # Contact Info section end
 
@@ -138,7 +157,7 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
     
     connection.insert_many_documents("datacollection", dtoList)
 
-    return dtoList
+    #return dtoList
 
 if(__name__ == '__main__'):
 
@@ -160,10 +179,9 @@ if(__name__ == '__main__'):
     time.sleep(45)
 
     connectionUrlsOnPage = getProfileUrlsOfConnections(driver)
-    data = goUrlAndGetData(connectionUrlsOnPage, driver, connection)
+    goUrlAndGetData(connectionUrlsOnPage, driver, connection)
 
     # That part should be done for every page.
     breakpoint()
-    print(data)
 
 #driver.quit()

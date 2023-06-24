@@ -11,6 +11,8 @@ class PersonDTO:
         self.birthday = ""
         self.company_name = ""
         self.job_title = ""
+        self.fullname = ""
+        self.user_role_description = ""
 
         self.created_at = datetime.now() # audit
     
