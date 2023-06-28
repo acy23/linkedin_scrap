@@ -65,6 +65,14 @@ def GetAndWriteData(connectionUrlsOnPage, driver, connection):
             print("User role description section element not found")
 
         try:
+            description = driver.find_element(By.CLASS_NAME, "display-flex.ph5.pv3").text
+            userInfoModel.description = description
+        except NoSuchElementException:
+            print("User description section element not found")
+        except TimeoutException:
+            print("User description section element timeout error")
+
+        try:
             div_element = driver.find_element(By.CSS_SELECTOR, ".pvs-list__outer-container")
             li_element = div_element.find_element(By.CSS_SELECTOR, ".artdeco-list__item.pvs-list__item--line-separated.pvs-list__item--one-column")
             element = li_element.find_element(By.CSS_SELECTOR, ".pvs-entity.pvs-entity--padded.pvs-list__item--no-padding-in-columns")
