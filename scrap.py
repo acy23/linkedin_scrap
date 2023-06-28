@@ -45,7 +45,7 @@ def getProfileUrlsOfConnections(driver):
     filtered_data = [url for url in filtered_data if url.startswith('https://www.linkedin.com/in/') and url[len('https://www.linkedin.com/in/')].islower()]
     return filtered_data
 
-def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
+def GetAndWriteData(connectionUrlsOnPage, driver, connection):
     dtoList = []
     dataList = []
     
@@ -157,7 +157,7 @@ def goUrlAndGetData(connectionUrlsOnPage, driver, connection):
     
     connection.insert_many_documents("datacollection", dtoList)
 
-    #return dtoList
+    return dtoList
 
 if(__name__ == '__main__'):
 
@@ -167,21 +167,38 @@ if(__name__ == '__main__'):
     # Create a new instance of the Chrome driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-    #login(driver)
-    #goToProfileAndConntections(driver)
-
     # That part should be done for every page.
 
     driver.get('https://www.linkedin.com')
 
     connection = MongoDBConnection()
 
+    dataList = []
+
+    page_number = 2
+
     time.sleep(45)
 
-    connectionUrlsOnPage = getProfileUrlsOfConnections(driver)
-    goUrlAndGetData(connectionUrlsOnPage, driver, connection)
+    while True:
+        try:
+            connectionUrlsOnPage = getProfileUrlsOfConnections(driver)
+            if not connectionUrlsOnPage:
+                print("Data collection is done :)...")
+                break
+
+            x = GetAndWriteData(connectionUrlsOnPage, driver, connection)
+
+            base_url = "https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&page="
+
+            driver.get(base_url + str(page_number) + "&sid=Mce")
+
+            page_number += 1
+           
+        except NoSuchElementException:
+            print("No continue button found")
+            break
 
     # That part should be done for every page.
-    breakpoint()
+
 
 #driver.quit()
