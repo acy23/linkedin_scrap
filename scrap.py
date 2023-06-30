@@ -73,15 +73,15 @@ def GetAndWriteData(connectionUrlsOnPage, driver, connection):
             print("User description section element timeout error")
 
         try:
-            div_element = driver.find_element(By.CSS_SELECTOR, ".pvs-list__outer-container")
-            li_element = div_element.find_element(By.CSS_SELECTOR, ".artdeco-list__item.pvs-list__item--line-separated.pvs-list__item--one-column")
-            element = li_element.find_element(By.CSS_SELECTOR, ".pvs-entity.pvs-entity--padded.pvs-list__item--no-padding-in-columns")
+            experience_tag = driver.find_element(By.ID, "experience")
+            parent_element = experience_tag.find_element(By.XPATH, "parent::*")  
+            last_experience_info = parent_element.find_element(By.CLASS_NAME, "pvs-entity.pvs-entity--padded.pvs-list__item--no-padding-in-columns").text
 
-            role = element.find_element(By.XPATH ,'.//div[contains(@class, "mr1")]//span').text
-            company = element.find_element(By.XPATH ,'.//span[contains(@class, "t-14")]').text
+            lines = last_experience_info.split("\n")
+            unique_lines = list(dict.fromkeys(lines))
+            last_experience_info = ", ".join(unique_lines)
 
-            userInfoModel.job_title = role
-            userInfoModel.company_name = company
+            userInfoModel.last_experince_info = last_experience_info
         except NoSuchElementException:
             print("Last job section does not found.")
         except TimeoutException:
