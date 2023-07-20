@@ -17,8 +17,11 @@ def remove_duplicates_by_linkedin_url(person_list):
 if(__name__ == '__main__'):
 
     # Specify the path to the downloaded file
-    file_paths = ['esram77_0-1999.json',
-                'esram77_2000-3358.json'
+    file_paths = ['gyalcinkaya_0-1999.json',
+                'gyalcinkaya_2000-4000.json',
+                'gyalcinkaya_4000-6000.json',
+                'gyalcinkaya_6000-8000.json',
+                'gyalcinkaya_8000-8786.json',
                 ]
 
     encodings = ['utf-8', 'latin-1', 'cp1252']
@@ -53,7 +56,7 @@ if(__name__ == '__main__'):
                 linkedinUrlModel.linkedin_url = 'https://www.linkedin.com/in/' + public_identifier + '/'
                 linkedinUrlModel.firstname = firstname
                 linkedinUrlModel.lastname = lastname
-                linkedinUrlModel.created_by = "esram77"
+                linkedinUrlModel.created_by = "gyalcinkaya_20_07"
 
                 dataList.append(linkedinUrlModel)
 
