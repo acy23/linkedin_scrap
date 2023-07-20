@@ -1,4 +1,4 @@
-import time
+import time, random, string
 from selenium import webdriver
 
 from selenium.webdriver.chrome.service import Service
@@ -14,37 +14,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from mongoExcelDTO import PersonDTO
 from mongoService import MongoDBConnection
 
-
-# Navigate to LinkedIn
-
-def login(webDriver):
-    webDriver.get('https://www.linkedin.com')
-
-    try:
-        webDriver.find_element(By.CSS_SELECTOR, "button.authwall-join-form__form-toggle--bottom[data-tracking-control-name='auth_wall_desktop-login-toggle']").click()
-        print("found")
-
-    except NoSuchElementException:
-
-        login_input_email = webDriver.find_element(By.ID, "session_key")
-        login_input_pass = webDriver.find_element(By.ID, "session_password")
-
-        login_input_email.send_keys('bloggeraekle@gmail.com')
-        login_input_pass.send_keys('Cazal1776')
-
-        webDriver.find_element(By.CSS_SELECTOR, "button.btn-md.btn-primary.flex-shrink-0.cursor-pointer.sign-in-form__submit-btn--full-width[data-id='sign-in-form__submit-btn'][data-tracking-control-name='homepage-basic_sign-in-submit-btn']").click()
-
-def goToProfileAndConntections(webDriver):
-    webDriver.get("""https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&sid=Nxj""")
-
-def getProfileUrlsOfConnections(driver):
-    elements = driver.find_elements(By.XPATH,"//a[contains(@class, 'app-aware-link ')]")
-    href_texts = [element.get_attribute("href") for element in elements]
-    filtered_data = [url for url in href_texts if "miniProfile" in url]
-    filtered_data = list(set(filtered_data))
-    filtered_data = [url for url in filtered_data if url.startswith('https://www.linkedin.com/in/') and url[len('https://www.linkedin.com/in/')].islower()]
-    return filtered_data
-
 def GetAndWriteData(connectionUrlsOnPage, driver, connection):
     dtoList = []
     dataList = []
@@ -53,6 +22,13 @@ def GetAndWriteData(connectionUrlsOnPage, driver, connection):
 
     for url in connectionUrlsOnPage:
         driver.get(url)     # Go to each profile
+
+        delay = random.uniform(1,20)
+        time.sleep(delay)
+
+        cookies = driver.get_cookies()  # Load cookies against auto log out.
+        for cookie in cookies:
+            driver.add_cookie(cookie)
 
         userInfoModel = PersonDTO()
 
@@ -161,52 +137,14 @@ def GetAndWriteData(connectionUrlsOnPage, driver, connection):
 
         # Contact Info section end
 
+        userInfoModel.created_by = "new_user"
+
         dtoList.append(userInfoModel)
     
     connection.insert_many_documents("datacollection", dtoList)
 
     return dtoList
 
-if(__name__ == '__main__'):
-
-    chrome_options = Options()
-    chrome_options.add_experimental_option("detach", True)
-
-    # Create a new instance of the Chrome driver
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-    # That part should be done for every page.
-
-    driver.get('https://www.linkedin.com')
-
-    connection = MongoDBConnection()
-
-    dataList = []
-
-    page_number = 2
-
-    time.sleep(45)
-
-    while True:
-        try:
-            connectionUrlsOnPage = getProfileUrlsOfConnections(driver)
-            if not connectionUrlsOnPage:
-                print("Data collection is done :)...")
-                break
-
-            x = GetAndWriteData(connectionUrlsOnPage, driver, connection)
-
-            base_url = "https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&page="
-
-            driver.get(base_url + str(page_number) + "&sid=Mce")
-
-            page_number += 1
-           
-        except NoSuchElementException:
-            print("No continue button found")
-            break
-
-    # That part should be done for every page.
-
-
-#driver.quit()
+def generate_random_string(length):
+    letters = string.ascii_letters
+    return ''.join(random.choice(letters) for _ in range(length))
