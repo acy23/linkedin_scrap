@@ -6,6 +6,7 @@ from mongoService import MongoDBConnection
 
 connection = MongoDBConnection()
 
+data_to_be_inserted = []
 headers = {
     'authority': 'www.linkedin.com',
     'accept': 'application/vnd.linkedin.normalized+json+2.1',
@@ -100,8 +101,6 @@ def process_data(lm):
 
 if(__name__ == '__main__'):
 
-    data_to_be_inserted = []
-
     data = connection.get_documents_by_creator('datacollection','esram77')
     with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
         # Map the list of lm data to the process_data function using the executor
@@ -109,6 +108,5 @@ if(__name__ == '__main__'):
         for lm in data:
             executor.map(process_data, lm)
         
-            
     connection.insert_many_documents("datacollection", data_to_be_inserted)
     
