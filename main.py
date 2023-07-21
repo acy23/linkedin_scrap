@@ -1,6 +1,6 @@
 import time, random, string, json, requests
 from urllib.parse import urlparse
-
+import concurrent.futures
 from mongoExcelDTO import PersonDTO
 from mongoService import MongoDBConnection
 
@@ -83,27 +83,32 @@ def send_request(linkedinUrl, memberIdentity):
     response = requests.get(url, headers=headers)
     return response
 
+def process_data(lm):
+    try:
+        userLinkedinUrl = lm['linkedin_url']
+        memberIdentity = extract_profile_id(userLinkedinUrl)
+
+        response = send_request(userLinkedinUrl, memberIdentity)
+        parsed_result = parse_response(response.text)
+        if parsed_result:
+            parsed_result.linkedin_url = userLinkedinUrl
+
+        data_to_be_inserted.append(parsed_result)
+        print("ADDED: ", parsed_result)
+    except Exception as err:
+        print("ERR: ", err, lm)
 
 if(__name__ == '__main__'):
 
     data_to_be_inserted = []
 
     data = connection.get_documents_by_creator('datacollection','esram77')
-
-    for lm in data:
-        try:
-            userLinkedinUrl = lm['linkedin_url']
-            memberIdentity = extract_profile_id(userLinkedinUrl)
-
-            response = send_request(userLinkedinUrl, memberIdentity)
-            parsed_result = parse_response(response.text)
-            if parsed_result:
-                parsed_result.linkedin_url = userLinkedinUrl
-
-            data_to_be_inserted.append(parsed_result)
-            print("ADDED: ",parsed_result)
-        except Exception as err:
-            print("ERR: ",err,lm)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+        # Map the list of lm data to the process_data function using the executor
+        # This will execute the function concurrently with 100 threads
+        for lm in data:
+            executor.map(process_data, lm)
+        
             
     connection.insert_many_documents("datacollection", data_to_be_inserted)
     
