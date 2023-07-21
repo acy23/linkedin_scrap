@@ -100,13 +100,9 @@ def process_data(lm):
         print("ERR: ", err, lm)
 
 if(__name__ == '__main__'):
-
     data = connection.get_documents_by_creator('datacollection','esram77')
     with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-        # Map the list of lm data to the process_data function using the executor
-        # This will execute the function concurrently with 100 threads
         for lm in data:
             executor.map(process_data, lm)
-        
     connection.insert_many_documents("datacollection", data_to_be_inserted)
     
